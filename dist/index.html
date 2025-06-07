@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Мессенджер</title>
+  <title>Мессенджер с входом</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -23,12 +23,12 @@
       display: flex;
       flex-direction: column;
     }
-    .login-screen, .chat-screen {
+    .screen {
       display: none;
       flex-direction: column;
       height: 100%;
     }
-    .login-screen.active, .chat-screen.active {
+    .screen.active {
       display: flex;
     }
     .header {
@@ -38,15 +38,16 @@
       font-weight: bold;
       border-bottom: 1px solid #444;
     }
-    .login-screen input, .chat-input input {
+    input {
       padding: 12px;
       margin: 20px;
       border: none;
       border-radius: 5px;
       font-size: 16px;
       outline: none;
+      color: black;
     }
-    .login-screen button {
+    button {
       margin: 0 20px 20px;
       padding: 12px;
       font-size: 16px;
@@ -99,76 +100,76 @@
 </head>
 <body>
   <div class="container">
-    <div class="login-screen active" id="loginScreen">
+    <div id="loginScreen" class="screen active">
       <div class="header">👤 Вход</div>
-      <input id="nicknameInput" placeholder="Введите ваш ник..." />
+      <input id="nicknameInput" placeholder="Введите ваш ник" />
       <button onclick="login()">Войти</button>
     </div>
-
-    <div class="chat-screen" id="chatScreen">
+    <div id="chatScreen" class="screen">
       <div class="header">💬 Чат</div>
-      <div class="chat-messages" id="chat"></div>
+      <div id="chat" class="chat-messages"></div>
       <div class="chat-input">
-        <input id="messageInput" placeholder="Сообщение..." />
+        <input id="messageInput" placeholder="Введите сообщение" />
         <button onclick="sendMessage()">➤</button>
       </div>
     </div>
   </div>
 
-<script>
-  const loginScreen = document.getElementById('loginScreen');
-  const chatScreen = document.getElementById('chatScreen');
-  const chat = document.getElementById('chat');
-  const nicknameInput = document.getElementById('nicknameInput');
-  const messageInput = document.getElementById('messageInput');
+  <script>
+    const loginScreen = document.getElementById('loginScreen');
+    const chatScreen = document.getElementById('chatScreen');
+    const chat = document.getElementById('chat');
+    const nicknameInput = document.getElementById('nicknameInput');
+    const messageInput = document.getElementById('messageInput');
 
-  const nickname = localStorage.getItem('nickname');
-  if (nickname) enterChat(nickname);
+    function login() {
+      const nick = nicknameInput.value.trim();
+      if (!nick) return alert('Введите ник!');
+      localStorage.setItem('nickname', nick);
+      showChat();
+    }
 
-  function login() {
-    const nick = nicknameInput.value.trim();
-    if (!nick) return;
-    localStorage.setItem('nickname', nick);
-    enterChat(nick);
-  }
-
-  function enterChat(nick) {
-    loginScreen.classList.remove('active');
-    chatScreen.classList.add('active');
-    fetchMessages();
-    setInterval(fetchMessages, 2000);
-  }
+    function showChat() {
+      loginScreen.classList.remove('active');
+      chatScreen.classList.add('active');
+      fetchMessages();
+      setInterval(fetchMessages, 2000);
+    }
 
   function fetchMessages() {
-    fetch('http://localhost:3000/messages')
+    div.textContent = `${msg.user}: ${msg.text}`;
+    fetch(`${API_URL}/messages`)
       .then(res => res.json())
       .then(data => {
         chat.innerHTML = '';
         data.forEach(msg => {
           const div = document.createElement('div');
           div.className = 'message';
-          div.innerHTML = `<strong>${msg.user}</strong>${msg.text}`;
+          div.textContent = msg.text; // или `${msg.user}: ${msg.text}`, если хочешь ники
           chat.appendChild(div);
         });
         chat.scrollTop = chat.scrollHeight;
       });
   }
 
-  function sendMessage() {
-    const text = messageInput.value.trim();
-    const user = localStorage.getItem('nickname');
-    if (!text || !user) return;
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      const user = localStorage.getItem('nickname');
+      if (!text) return;
+      fetch('https://myproject-production-cfae.up.railway.app/messages' , {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user, text }),
+      }).then(() => {
+        messageInput.value = '';
+        fetchMessages();
+      });
+    }
 
-    fetch('http://localhost:3000/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user, text })
-    }).then(() => {
-      messageInput.value = '';
-      fetchMessages();
-    });
-  }
-</script>
-
+    // Если ник сохранён, сразу показываем чат
+    if (localStorage.getItem('nickname')) {
+      showChat();
+    }
+  </script>
 </body>
 </html>
